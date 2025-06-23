@@ -27,9 +27,11 @@ public class Firework {
     Float targetY = null; // 目標爆発高度（nullなら従来通り最高点で爆発）
     float prevY; // 前フレームのy座標
     boolean fromClick = false;
-    int launchTime = 0;
     int fuseTime = 0;
     boolean isHighlight = false;
+    // --- v1.6 Star-Mine Mode Fields ---
+    private Float fuseTimeMillis = null; // 指定爆発時間（ミリ秒）
+    private int launchTime = 0;         // 打ち上げ時刻
 
     public Firework(PApplet p, float width) {
         this.p = p;
@@ -73,6 +75,16 @@ public class Firework {
         this.prevY = this.pos.y;
     }
 
+    /**
+     * ★ v1.6 スターマイン用コンストラクタ
+     * @param fuseTime この時間（ミリ秒）が経過したら爆発する
+     */
+    public Firework(PApplet p, float x, float targetY, boolean isHighlight, float fuseTime) {
+        this(p, x, targetY, isHighlight); // 既存のコンストラクタを呼び出す
+        this.fuseTimeMillis = fuseTime + p.random(-50, 50); // ±50msのランダム性
+        this.launchTime = p.millis();
+    }
+
     private int getRandomColor(PApplet p) {
         int[] rgb = PALETTE[(int)p.random(PALETTE.length)];
         return p.color(rgb[0], rgb[1], rgb[2]);
@@ -83,13 +95,13 @@ public class Firework {
             prevY = pos.y;
             vel.add(new PVector(0, gravityY));
             pos.add(vel);
-
             boolean shouldExplode = false;
-            if (targetY != null) {
-                // 目標高度を通過した瞬間を判定
-                if (vel.y > 0 && pos.y >= targetY) {
+            if (fuseTimeMillis != null) {
+                if (p.millis() - launchTime >= fuseTimeMillis) {
                     shouldExplode = true;
-                } else if (prevY > targetY && pos.y <= targetY) {
+                }
+            } else if (targetY != null) {
+                if ((vel.y > 0 && pos.y >= targetY) || (prevY > targetY && pos.y <= targetY)) {
                     shouldExplode = true;
                 }
             } else {

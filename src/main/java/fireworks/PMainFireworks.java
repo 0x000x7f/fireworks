@@ -3,6 +3,7 @@ package fireworks;
 import processing.core.PApplet;
 import java.util.ArrayList;
 import java.util.List;
+import processing.core.PVector;
 
 public class PMainFireworks extends PApplet {
     // 主要パラメータ
@@ -16,6 +17,15 @@ public class PMainFireworks extends PApplet {
     private boolean inFocusMode = false;
     private int focusStartMillis = 0;
     private static final int FOCUS_DURATION = 3000;
+    private boolean highlightPending = false; // ハイライト打ち上げ待機中
+    private int pendingClickX, pendingClickY; // クリック位置保存
+    // --- v1.6 Star-Mine Mode: State Management ---
+    private List<PVector> pendingClicks = new ArrayList<>();
+    private int lastClickTime = 0;
+    private static final int LAUNCH_DELAY_MS = 500; // 0.5秒
+    private boolean starMinePending = false; // 闇待機中フラグ
+    private int darkStartMillis = 0;
+    private static final int DARK_DURATION_MS = 1000; // 1秒闇
 
     public void settings() {
         fullScreen();
@@ -32,12 +42,39 @@ public class PMainFireworks extends PApplet {
         fill(0, 0, 0, BACKGROUND_ALPHA);
         rect(0, 0, width, height);
 
+        // --- v1.6 Star-Mine Mode: Launch Trigger Logic ---
+        // クリック連打→0.5秒経過→全花火消滅→1秒闇→一斉打ち上げ
+        if (!pendingClicks.isEmpty() && (millis() - lastClickTime > LAUNCH_DELAY_MS) && !starMinePending) {
+            // 0.5秒経過後、全花火消滅待機モードへ
+            if (fireworks.isEmpty()) {
+                starMinePending = true;
+                darkStartMillis = millis();
+            }
+        }
+        // 闇の時間経過後に一斉打ち上げ
+        if (starMinePending && (millis() - darkStartMillis > DARK_DURATION_MS)) {
+            float highestY = height;
+            for (PVector click : pendingClicks) {
+                if (click.y < highestY) {
+                    highestY = click.y;
+                }
+            }
+            float maxFuseTime = calculateFuseTime(highestY);
+            for (PVector click : pendingClicks) {
+                fireworks.add(new Firework(this, click.x, click.y, true, maxFuseTime));
+            }
+            pendingClicks.clear();
+            starMinePending = false;
+            inFocusMode = true;
+            focusStartMillis = millis();
+        }
+
         // フォーカス解除判定
         if (inFocusMode && (millis() - focusStartMillis > FOCUS_DURATION)) {
             inFocusMode = false;
         }
-        // フォーカス中でなければ自動花火
-        if (!inFocusMode && random(1) < FIREWORK_SPAWN_RATE) {
+        // フォーカスモード中でもなく、ハイライト待機中でもない場合に自動打ち上げ
+        if (pendingClicks.isEmpty() && !starMinePending && !inFocusMode && random(1) < FIREWORK_SPAWN_RATE) {
             fireworks.add(new Firework(this, width));
         }
 
@@ -54,12 +91,10 @@ public class PMainFireworks extends PApplet {
 
     @Override
     public void mousePressed() {
-        // クリック位置を目標高度とするハイライト花火を生成
-        float targetX = mouseX;
-        float targetY = mouseY;
-        fireworks.add(new Firework(this, targetX, targetY, true));
-        inFocusMode = true;
-        focusStartMillis = millis();
+        // 待機リストにクリック位置を追加
+        pendingClicks.add(new PVector(mouseX, mouseY));
+        // 最後のクリック時刻を更新
+        lastClickTime = millis();
     }
 
     @Override
@@ -76,6 +111,15 @@ public class PMainFireworks extends PApplet {
             fw.vel = new processing.core.PVector(cos(angle) * speed, sin(angle) * speed);
             fireworks.add(fw);
         }
+    }
+
+    private float calculateFuseTime(float targetY) {
+        if (targetY < 0) targetY = 0;
+        if (targetY >= height) targetY = height - 1;
+        float dy = height - targetY;
+        float vy = -(float)Math.sqrt(2 * GRAVITY_Y * dy);
+        float timeInFrames = -vy / GRAVITY_Y;
+        return timeInFrames * (1000.0f / 60.0f);
     }
 
     public static void main(String[] args) {
