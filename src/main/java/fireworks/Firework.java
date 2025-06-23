@@ -24,21 +24,80 @@ public class Firework {
     int c;
     PApplet p;
     FireworkType type;
+    Float targetY = null; // 目標爆発高度（nullなら従来通り最高点で爆発）
+    float prevY; // 前フレームのy座標
+    boolean fromClick = false;
+    int launchTime = 0;
+    int fuseTime = 0;
+    boolean isHighlight = false;
 
     public Firework(PApplet p, float width) {
         this.p = p;
-        this.pos = new PVector(p.random(width), p.height);
-        this.vel = new PVector(0, p.random(-13, -10));
-        int[] rgb = PALETTE[(int)p.random(PALETTE.length)];
-        this.c = p.color(rgb[0], rgb[1], rgb[2]);
+        float x = p.random(width);
+        float targetY = p.random(p.height * 0.2f, p.height * 0.7f); // ランダムな目標高度
+        this.pos = new PVector(x, p.height);
+        this.c = getRandomColor(p);
         this.type = FireworkType.MARU;
+        this.targetY = targetY;
+        this.prevY = this.pos.y;
+        float g = 0.2f;
+        float dy = p.height - targetY;
+        float vy = -(float)Math.sqrt(2 * g * dy); // ランダム誤差なし
+        this.vel = new PVector(0, vy);
+    }
+
+    // targetY指定用コンストラクタ
+    public Firework(PApplet p, float x, float targetY, float vy, int c) {
+        this.p = p;
+        this.pos = new PVector(x, p.height);
+        float vx = p.random(-0.5f, 0.5f);
+        this.vel = new PVector(vx, vy);
+        this.c = c;
+        this.type = FireworkType.MARU;
+        this.targetY = targetY;
+        this.prevY = this.pos.y;
+    }
+
+    // クリック打ち上げ・ハイライト用コンストラクタ
+    public Firework(PApplet p, float x, float targetY, boolean isHighlight) {
+        this.p = p;
+        this.pos = new PVector(x, p.height);
+        this.c = getRandomColor(p);
+        this.type = FireworkType.MARU;
+        this.isHighlight = isHighlight;
+        float g = 0.2f; // GRAVITY_Yと合わせる
+        float dy = p.height - targetY;
+        float vy = -(float)Math.sqrt(2 * g * dy); // ランダム誤差なし
+        this.vel = new PVector(0, vy);
+        this.targetY = targetY;
+        this.prevY = this.pos.y;
+    }
+
+    private int getRandomColor(PApplet p) {
+        int[] rgb = PALETTE[(int)p.random(PALETTE.length)];
+        return p.color(rgb[0], rgb[1], rgb[2]);
     }
 
     public void update(float gravityY, float lifespanDecay, int particleCount) {
         if (!exploded) {
+            prevY = pos.y;
             vel.add(new PVector(0, gravityY));
             pos.add(vel);
-            if (vel.y >= 0) {
+
+            boolean shouldExplode = false;
+            if (targetY != null) {
+                // 目標高度を通過した瞬間を判定
+                if (vel.y > 0 && pos.y >= targetY) {
+                    shouldExplode = true;
+                } else if (prevY > targetY && pos.y <= targetY) {
+                    shouldExplode = true;
+                }
+            } else {
+                if (vel.y >= 0) {
+                    shouldExplode = true;
+                }
+            }
+            if (shouldExplode) {
                 explode(particleCount, lifespanDecay);
                 exploded = true;
             }
@@ -52,13 +111,13 @@ public class Firework {
     }
 
     private void explode(int particleCount, float lifespanDecay) {
-        if (type == FireworkType.MARU) {
-            for (int i = 0; i < particleCount; i++) {
-                float angle = p.random(PApplet.TWO_PI);
-                float speed = p.random(2, 8);
-                PVector vel = new PVector(p.cos(angle) * speed, p.sin(angle) * speed);
-                particles.add(new Particle(p, pos.copy(), vel, c));
-            }
+        int count = isHighlight ? 250 : particleCount;
+        float maxSpeed = isHighlight ? 12.0f : 8.0f;
+        for (int i = 0; i < count; i++) {
+            float angle = p.random(PApplet.TWO_PI);
+            float speed = maxSpeed * (float)Math.sqrt(p.random(1));
+            PVector vel = new PVector(p.cos(angle) * speed, p.sin(angle) * speed);
+            particles.add(new Particle(p, pos.copy(), vel, c, isHighlight));
         }
     }
 
