@@ -84,4 +84,77 @@
 -   **変更を取り消したい場合:** `git restore <file>` または `git checkout -- <file>` を使用する。
 -   **古いビルドファイル等を掃除したい場合:** `mvn clean` コマンドを使用する。
 
+追記1
+```markdown
+# CLAUDE.md
+
+## 📌 プロジェクト概要
+このプロジェクトは JavaFX による花火シミュレーションの物理・可視化を扱います。現在の作業ブランチは `ubuntu-port` です。
+
+## 🛑 Claudeによる自動操作の禁止事項
+
+### ❌ Git操作に関する禁止事項
+- Claudeは **mainブランチ** に対して一切の`add`・`commit`・`push`をしてはいけません。
+- Claudeは **`rebase`, `reset`, `checkout`, `push --force`** を提案・実行してはいけません。
+- Claudeは **untrackedファイルの削除 (`rm -rf`) を実行しないこと**。
+- Claudeは `.gitignore` にないファイルを削除対象にしないこと。
+
+### ✅ Git操作で許可される作業（ubuntu-portブランチのみ）
+- `git add PROGRESS_LOG.md` や `CLAUDE.md` などのログ関連ファイル
+- `git commit -m "作業ログ更新"` 程度の軽微なコミット
+- `git push origin ubuntu-port`（ただし前回push済みか確認すること）
+
+## 📖 Claudeへの明示ルール
+
+### 🧠 Claudeが常に確認・記録すべきこと
+- 現在のブランチ名：`git branch`
+- リモート設定：`git remote -v`
+- 最新のコミットログ：`git log --oneline -3`
+
+### 🧾 Claudeが残すべきファイル
+- `PROGRESS_LOG.md`：セッションの要約と未完タスク
+- `CLAUDE.md`：Claudeの使用ルールと制限
+- `mcp.log`：実行中のMCPサーバのログ
+- その他セッションで生成した設計・記録用ドキュメント
+
+## 🚫 削除禁止のファイル・ディレクトリ
+以下はClaudeが削除してはいけない：
+- `jdk-*`, `apache-maven-*`, `project*`, `target*/`, `SolarSystem*`, `SuikaGame*`
+- バイナリ配布物（`.tar.gz`, `.cmd`, `.conf`, `*.Zone.Identifier` 等）
+- `.gitignore` に未登録でも削除は必ず人間の許可が必要
+
+## ✅ Claudeの作業ルール（再掲）
+
+| 操作項目 | 許可 | 条件 |
+|----------|------|------|
+| Git Push | ✅   | `ubuntu-port`のみ |
+| Rebase   | ❌   | 使用禁止 |
+| Reset    | ❌   | 使用禁止 |
+| `rm -rf` | ❌   | 手動確認必須 |
+| `.gitignore`編集 | ✅ | 変更提案のみ、自動コミット不可 |
+| コード編集 | ✅ | 明示されたファイルに限る |
+| MCPログ出力 | ✅ | `mcp.log`に保存し、直接標準出力しないこと |
+
+## 🗂 現在の作業状況（Claude記入）
+- [ ] `風（vx）演算の実装`
+- [ ] `多段爆発・形状バリエーションの拡張`
+- [ ] `v1.5リリースコミット＆push`
+
+---
+```
+
+---
+
+## 🔍 目的と効果
+
+| 目的               | 効果                                         |
+| ---------------- | ------------------------------------------ |
+| Claudeによる暴走操作の防止 | `git rebase`, `rm -rf` などの危険操作を回避          |
+| 作業ブランチの明確化       | `main` ではなく `ubuntu-port` に限定することで誤pushを防止 |
+| セッションの継続性の確保     | Claudeが再起動しても `CLAUDE.md` に基づいて文脈復元できる     |
+| 削除禁止対象の明文化       | `.Zone.Identifier` などの誤削除を防ぐ               |
+
+---
+
+
 **あなたの役割は、安全かつ着実にプロジェクトを進化させることです。不明な点やリスクのある操作については、必ず人間に判断を仰いでください。**
