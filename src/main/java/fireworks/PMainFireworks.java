@@ -6,8 +6,8 @@ import java.util.List;
 import processing.core.PVector;
 
 public class PMainFireworks extends PApplet {
-    // 主要パラメータ
-    private static final float GRAVITY_Y = 0.2f;
+    // 主要パラメータ (v2.1 Air Resistance & Realistic Physics)
+    private static final float GRAVITY_Y = 0.12f;  // 0.2f → 0.12f バランス調整
     private static final float FIREWORK_SPAWN_RATE = 0.03f;
     private static final int PARTICLE_COUNT = 100;
     private static final float PARTICLE_LIFESPAN_DECAY = 2.0f;
@@ -26,8 +26,8 @@ public class PMainFireworks extends PApplet {
     private boolean starMinePending = false; // 闇待機中フラグ
     private int darkStartMillis = 0;
     private static final int DARK_DURATION_MS = 1000; // 1秒闇
-    // --- v2.0 Wind System ---
-    private static final String VERSION = "v2.0 Wind System";
+    // --- v2.1 Air Resistance & Realistic Physics ---
+    private static final String VERSION = "v2.1 Air Resistance & Realistic Physics";
     private Firework.FireworkPattern currentPattern = Firework.FireworkPattern.RANDOM;
     private boolean showDebugInfo = false;
     private char lastPressedKey = ' '; // 最後に押されたキーを記録
@@ -149,8 +149,9 @@ public class PMainFireworks extends PApplet {
             float speed = random(10, 14);
             fw.vel = new processing.core.PVector(cos(angle) * speed, sin(angle) * speed);
             fireworks.add(fw);
-        } else if (key >= '1' && key <= '4') {
-            // 数字キーでパターン切替
+        } else if (key >= '1' && key <= '9' || key == '0') {
+            // 数字キーでパターン切替（1-9,0対応）
+            Firework.FireworkPattern oldPattern = currentPattern;
             switch (key) {
                 case '1':
                     currentPattern = Firework.FireworkPattern.RANDOM;
@@ -164,8 +165,32 @@ public class PMainFireworks extends PApplet {
                 case '4':
                     currentPattern = Firework.FireworkPattern.STAR;
                     break;
+                case '5':
+                    currentPattern = Firework.FireworkPattern.CHRYSANTHEMUM;
+                    break;
+                case '6':
+                    currentPattern = Firework.FireworkPattern.WILLOW;
+                    break;
+                case '7':
+                    currentPattern = Firework.FireworkPattern.PALM;
+                    break;
+                case '8':
+                    currentPattern = Firework.FireworkPattern.MARUWARI_RED;
+                    break;
+                case '9':
+                    currentPattern = Firework.FireworkPattern.BOTAN;
+                    break;
+                case '0':
+                    currentPattern = Firework.FireworkPattern.SENRIN_GIKU;
+                    break;
             }
-            println("Pattern changed to: " + currentPattern);
+            println("Key '" + key + "' pressed: " + oldPattern + " -> " + currentPattern);
+            
+            // テスト用花火を即座に打ち上げ
+            Firework testFw = new Firework(this, width/2, height*0.3f, true);
+            testFw.setPattern(currentPattern);
+            fireworks.add(testFw);
+            println("Test firework launched with pattern: " + currentPattern);
         } else if (key == 'd' || key == 'D') {
             showDebugInfo = !showDebugInfo;
             println("Debug info: " + (showDebugInfo ? "ON" : "OFF"));
@@ -226,8 +251,18 @@ public class PMainFireworks extends PApplet {
         
         // パターン説明
         textSize(12);
-        text("Controls: 1-4=Pattern  D=Debug  R=Reset  Space=Launch", 15, 315);
-        text("Wind: ←→=Direction  ↑↓=Strength  T=Toggle", 15, 330);
+        text("Controls: 1-9,0=Pattern  D=Debug  R=Reset  Space=Launch", 15, 315);
+        text("Patterns: 1=丸割物 2=正円 3=直線 4=星 5=菊 6=柳 7=椰子", 15, 330);
+        text("Japanese: 8=赤丸割物 9=牡丹 0=千輪菊", 15, 345);
+        text("Wind: ←→=Direction  ↑↓=Strength  T=Toggle", 15, 360);
+    }
+
+    /**
+     * 花火リストに新しい花火を追加するための公開メソッド
+     * (千輪菊から呼び出される)
+     */
+    public void addFirework(Firework fw) {
+        this.fireworks.add(fw);
     }
 
     public static void main(String[] args) {
