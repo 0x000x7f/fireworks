@@ -26,11 +26,12 @@ public class PMainFireworks extends PApplet {
     private boolean starMinePending = false; // 闇待機中フラグ
     private int darkStartMillis = 0;
     private static final int DARK_DURATION_MS = 1000; // 1秒闇
-    // --- v1.9 Debug Display Optimization ---
-    private static final String VERSION = "v1.9 Debug Display Optimization";
+    // --- v2.0 Wind System ---
+    private static final String VERSION = "v2.0 Wind System";
     private Firework.FireworkPattern currentPattern = Firework.FireworkPattern.RANDOM;
     private boolean showDebugInfo = false;
     private char lastPressedKey = ' '; // 最後に押されたキーを記録
+    private WindSystem windSystem; // 風システム
 
     public void settings() {
         fullScreen();
@@ -40,6 +41,8 @@ public class PMainFireworks extends PApplet {
         colorMode(HSB, 360, 255, 255, 255);
         frameRate(60);
         background(0);
+        // 風システム初期化
+        windSystem = new WindSystem();
     }
 
     public void draw() {
@@ -87,10 +90,13 @@ public class PMainFireworks extends PApplet {
             fireworks.add(fw);
         }
 
-        // 全ての花火を更新・描画
+        // 風システム更新
+        windSystem.update(1.0f/60.0f); // 60FPS想定
+        
+        // 全ての花火を更新・描画（風システム適用）
         for (int i = fireworks.size() - 1; i >= 0; i--) {
             Firework f = fireworks.get(i);
-            f.update(GRAVITY_Y, PARTICLE_LIFESPAN_DECAY, PARTICLE_COUNT);
+            f.update(GRAVITY_Y, PARTICLE_LIFESPAN_DECAY, PARTICLE_COUNT, windSystem);
             f.display();
             if (f.isDone()) {
                 fireworks.remove(i);
@@ -115,7 +121,23 @@ public class PMainFireworks extends PApplet {
     public void keyPressed() {
         lastPressedKey = key; // キーを記録
         
-        if (key == 'r' || key == 'R') {
+        // 矢印キーによる風制御（現実的な調整幅）
+        if (keyCode == LEFT) {
+            windSystem.adjustWindDirection(-0.1f); // 左風（調整量削減）
+            println("Wind direction: LEFT");
+        } else if (keyCode == RIGHT) {
+            windSystem.adjustWindDirection(0.1f);  // 右風（調整量削減）
+            println("Wind direction: RIGHT");
+        } else if (keyCode == UP) {
+            windSystem.adjustWindStrength(0.05f);  // 風強度UP（調整量削減）
+            println("Wind strength UP");
+        } else if (keyCode == DOWN) {
+            windSystem.adjustWindStrength(-0.05f); // 風強度DOWN（調整量削減）
+            println("Wind strength DOWN");
+        } else if (key == 't' || key == 'T') {
+            windSystem.toggleWind();               // 風ON/OFF
+            println("Wind: " + (windSystem.isWindEnabled() ? "ON" : "OFF"));
+        } else if (key == 'r' || key == 'R') {
             fireworks.clear();
         } else if (key == ' ') {
             // 画面中央下部からランダムな花火を1発打ち上げ
@@ -189,10 +211,23 @@ public class PMainFireworks extends PApplet {
         text("Focus Mode: " + inFocusMode, 15, 215);
         text("Pending Clicks: " + pendingClicks.size(), 15, 245);
         
-        // パターン説明
+        // 風情報表示（強調）
         textSize(16);
-        text("Controls: 1=RANDOM  2=RING  3=LINE  4=STAR", 15, 275);
-        text("D=Debug Toggle  R=Reset  Space=Launch", 15, 295);
+        fill(120, 255, 255); // 水色で風情報を強調
+        text("Wind: " + windSystem.getWindStatus(), 15, 275);
+        
+        // 風の詳細情報
+        fill(100, 255, 100); // 元の明るい緑に戻す
+        textSize(14);
+        if (windSystem.isWindEnabled()) {
+            text("Wind Details: Vel=" + String.format("%.2f", windSystem.getWindVelocityX()) + 
+                 " | Str=" + String.format("%.2f", windSystem.getWindStrength()), 15, 295);
+        }
+        
+        // パターン説明
+        textSize(12);
+        text("Controls: 1-4=Pattern  D=Debug  R=Reset  Space=Launch", 15, 315);
+        text("Wind: ←→=Direction  ↑↓=Strength  T=Toggle", 15, 330);
     }
 
     public static void main(String[] args) {

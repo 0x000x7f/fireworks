@@ -10,6 +10,13 @@ public class Firework {
         MARU // 日本の伝統的な球状花火
     }
 
+    enum FireworkPattern {
+        RANDOM,  // 従来のランダム拡散（球状）
+        RING,    // 環状配置
+        LINE,    // 直線状配置
+        STAR     // 星型配置
+    }
+
     private static final int[][] PALETTE = {
         {255, 215, 0},    // 金
         {220, 20, 60},    // 紅
@@ -24,6 +31,7 @@ public class Firework {
     int c;
     PApplet p;
     FireworkType type;
+    FireworkPattern pattern;
     Float targetY = null; // 目標爆発高度（nullなら従来通り最高点で爆発）
     float prevY; // 前フレームのy座標
     boolean fromClick = false;
@@ -40,6 +48,7 @@ public class Firework {
         this.pos = new PVector(x, p.height);
         this.c = getRandomColor(p);
         this.type = FireworkType.MARU;
+        this.pattern = FireworkPattern.RANDOM;
         this.targetY = targetY;
         this.prevY = this.pos.y;
         float g = 0.2f;
@@ -56,6 +65,7 @@ public class Firework {
         this.vel = new PVector(vx, vy);
         this.c = c;
         this.type = FireworkType.MARU;
+        this.pattern = FireworkPattern.RANDOM;
         this.targetY = targetY;
         this.prevY = this.pos.y;
     }
@@ -66,6 +76,7 @@ public class Firework {
         this.pos = new PVector(x, p.height);
         this.c = getRandomColor(p);
         this.type = FireworkType.MARU;
+        this.pattern = FireworkPattern.RANDOM;
         this.isHighlight = isHighlight;
         float g = 0.2f; // GRAVITY_Yと合わせる
         float dy = p.height - targetY;
@@ -91,6 +102,10 @@ public class Firework {
     }
 
     public void update(float gravityY, float lifespanDecay, int particleCount) {
+        update(gravityY, lifespanDecay, particleCount, null);
+    }
+    
+    public void update(float gravityY, float lifespanDecay, int particleCount, WindSystem windSystem) {
         if (!exploded) {
             prevY = pos.y;
             vel.add(new PVector(0, gravityY));
@@ -114,8 +129,13 @@ public class Firework {
                 exploded = true;
             }
         }
+        // パーティクルの更新（風システム対応）
         for (int i = particles.size() - 1; i >= 0; i--) {
-            particles.get(i).update(gravityY, lifespanDecay);
+            if (windSystem != null) {
+                particles.get(i).update(gravityY, lifespanDecay, windSystem);
+            } else {
+                particles.get(i).update(gravityY, lifespanDecay);
+            }
             if (particles.get(i).isDead()) {
                 particles.remove(i);
             }
@@ -125,11 +145,72 @@ public class Firework {
     private void explode(int particleCount, float lifespanDecay) {
         int count = isHighlight ? 250 : particleCount;
         float maxSpeed = isHighlight ? 12.0f : 8.0f;
+        generateParticles(count, maxSpeed);
+    }
+
+    private void generateParticles(int count, float maxSpeed) {
+        switch (this.pattern) {
+            case RING:
+                generateRingPattern(count, maxSpeed);
+                break;
+            case LINE:
+                generateLinePattern(count, maxSpeed);
+                break;
+            case STAR:
+                generateStarPattern(count, maxSpeed);
+                break;
+            case RANDOM:
+            default:
+                generateRandomPattern(count, maxSpeed);
+                break;
+        }
+    }
+
+    private void generateRandomPattern(int count, float maxSpeed) {
         for (int i = 0; i < count; i++) {
             float angle = p.random(PApplet.TWO_PI);
             float speed = maxSpeed * (float)Math.sqrt(p.random(1));
             PVector vel = new PVector(p.cos(angle) * speed, p.sin(angle) * speed);
             particles.add(new Particle(p, pos.copy(), vel, c, isHighlight));
+        }
+    }
+
+    private void generateRingPattern(int count, float maxSpeed) {
+        // リングは完全に均等に配置、速度も一定
+        for (int i = 0; i < count; i++) {
+            float angle = PApplet.TWO_PI * i / count;
+            float speed = maxSpeed * 1.5f; // かなり速く
+            PVector vel = new PVector(p.cos(angle) * speed, p.sin(angle) * speed);
+            particles.add(new Particle(p, pos.copy(), vel, c, isHighlight));
+        }
+    }
+
+    private void generateLinePattern(int count, float maxSpeed) {
+        // 固定方向（真上）でより明確な直線
+        float baseAngle = -PApplet.PI / 2; // 真上方向に固定
+        for (int i = 0; i < count; i++) {
+            float angle = baseAngle + p.random(-0.05f, 0.05f); // 非常に狭い散らばり（±3度）
+            float speed = maxSpeed * p.random(1.0f, 2.0f); // より長い直線
+            PVector vel = new PVector(p.cos(angle) * speed, p.sin(angle) * speed);
+            particles.add(new Particle(p, pos.copy(), vel, c, isHighlight));
+        }
+    }
+
+    private void generateStarPattern(int count, float maxSpeed) {
+        int rays = 5; // 五芒星
+        int particlesPerRay = count / rays;
+        int remaining = count % rays; // 余りの粒子
+        
+        for (int ray = 0; ray < rays; ray++) {
+            int particlesThisRay = particlesPerRay + (ray < remaining ? 1 : 0);
+            float rayAngle = PApplet.TWO_PI * ray / rays;
+            
+            for (int i = 0; i < particlesThisRay; i++) {
+                float angle = rayAngle + p.random(-0.1f, 0.1f); // より狭い散らばり（±6度）
+                float speed = maxSpeed * p.random(1.2f, 1.8f); // より長い光線
+                PVector vel = new PVector(p.cos(angle) * speed, p.sin(angle) * speed);
+                particles.add(new Particle(p, pos.copy(), vel, c, isHighlight));
+            }
         }
     }
 
@@ -146,5 +227,13 @@ public class Firework {
 
     public boolean isDone() {
         return exploded && particles.isEmpty();
+    }
+
+    public void setPattern(FireworkPattern pattern) {
+        this.pattern = pattern;
+    }
+
+    public FireworkPattern getPattern() {
+        return this.pattern;
     }
 } 

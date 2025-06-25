@@ -28,9 +28,23 @@ public class Particle {
     }
 
     public void update(float gravityY, float lifespanDecay) {
+        // 位置を更新
         pos.add(vel);
-        vel.y += 0.03;
+        // 重力を適用
+        vel.y += gravityY;
+        // 寿命を減衰
         lifespan *= LIFESPAN_DECAY_RATE;
+    }
+    
+    public void update(float gravityY, float lifespanDecay, WindSystem windSystem) {
+        // 風力を適用（風が有効な場合）
+        if (windSystem != null && windSystem.isWindEnabled()) {
+            PVector windForce = windSystem.getWindForce(pos, size, p.height);
+            vel.add(windForce);
+        }
+        
+        // 既存の更新処理
+        update(gravityY, lifespanDecay);
     }
 
     public void display() {
