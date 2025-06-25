@@ -9,9 +9,19 @@
 
 ## 実行方法
 
-1. 必要環境: Java 17以上, Maven
+### 方法1: 直接実行（推奨）
+1. 必要環境: Java 17以上
 2. clone後、以下を実行
 
+```bash
+# コンパイル
+javac -cp "lib/processing-core.jar" -d target/classes src/main/java/fireworks/*.java
+
+# 実行
+java -cp "lib/processing-core.jar:target/classes" fireworks.PMainFireworks
+```
+
+### 方法2: Maven（要Maven環境）
 ```bash
 mvn compile exec:java
 ```
@@ -57,6 +67,20 @@ MIT License
 - Maven/JitPackビルド
 - ドキュメント・進捗管理 
 
+## 機能・バージョン履歴
+
+### v1.9 Debug Display Optimization（現在）
+- デバッグ情報の半透明化・視認性最適化
+- 明るい緑色テキスト・薄い背景で花火表示を邪魔しない設計
+
+### v1.8 Pattern Control
+- パターン制御機能（1-4キーで花火形状切替）
+- RANDOM/RING/LINE/STAR形状対応
+
+### v1.6 Star-Mine Mode
+- スターマインモード（連続クリック→一斉打ち上げ）
+- 闇の演出効果付き
+
 ## 物理モデル仕様（v1.5以降）
 
 - クリック花火・自動花火ともに「目標高度（Y座標）」で爆発
@@ -64,9 +88,12 @@ MIT License
 - 縦軸のランダム性は「目標高度の選択」のみ（自動花火はランダム、クリック花火はユーザー指定）
 - 今後は風の演算で横軸（vx）に自然なズレを加える予定
 
-### 使い方
-- クリック：その位置でハイライト花火が爆発（物理的に正確な高度）
-- 自動：ランダムな高さで花火が爆発
+### 操作方法
+- **クリック**：スターマインモード（連続クリック→0.5秒待機→一斉打ち上げ）
+- **スペースキー**：中央下部からランダム花火を1発打ち上げ
+- **1-4キー**：花火パターン切替（RANDOM/RING/LINE/STAR）
+- **Dキー**：デバッグ情報表示切替
+- **Rキー**：全花火クリア
 
 ### 設計思想・拡張性
 - 物理モデルを厳密化することで、今後「風」「多段爆発」「形状バリエーション」などの拡張が容易

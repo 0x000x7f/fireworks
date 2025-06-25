@@ -1,3 +1,70 @@
+### 📅 日付：2025-06-25 (AM Session)
+#### 🔨 作業内容：
+- WSL環境への移行に伴うJava設定問題の解決
+- Cursor設定でjava.jdt.ls.java.homeパスをWSL用に修正（/usr/lib/jvm/java-21-openjdk-amd64）
+- CLAUDE.mdファイル作成：AI作業ログ自動記録ルール定義
+- 花火シミュレーションのデバッグ準備（Maven/Processing依存関係の確認）
+
+#### ✅ 完了タスク：
+- [x] CLAUDE.mdファイル作成（AI作業ログ自動記録ルール定義）
+- [x] WSL環境でのJavaパス問題特定・解決策提示
+
+#### 📝 未完タスク / 次回予定：
+- [ ] Cursor IDE再起動後、Java Language Server動作確認
+- [ ] Maven依存関係解決・Processing ライブラリ取得
+- [ ] 現在のコードをデバッグ・動作確認する
+- [ ] 風（vx）演算の実装
+- [ ] 多段爆発・形状バリエーションの拡張
+- [ ] v1.5リリースコミット＆push
+
+#### ⚠️ 再起動前メモ：
+- WSL環境でJavaパス問題発生中
+- Cursor設定で java.jdt.ls.java.home を /usr/lib/jvm/java-21-openjdk-amd64 に設定要
+- Maven未完全インストール状態、Processing依存関係未解決
+- 現在のセッション終了後、設定変更＆IDE再起動が必要
+
+---
+
+### 📅 日付：2025-06-25 (PM Session)
+#### 🔨 作業内容：
+- 再起動後の環境確認・Java Language Server動作確認完了
+- Processing 3.3.7 core JARダウンロード・依存関係解決
+- javacとjavaコマンドでの直接コンパイル・実行環境構築
+- 花火シミュレーション動作確認成功（v1.8 Pattern Control）
+- デバッグ情報表示の最適化：
+  - 背景透明度を50に設定（非常に薄い半透明）
+  - テキスト色を明るい緑色（100, 255, 100）に統一
+  - 境界線も薄い透明度（100）に調整
+
+#### ✅ 完了タスク：
+- [x] Java Language Server動作確認
+- [x] Processing依存関係解決（Maven不要のJAR直接使用）
+- [x] 花火シミュレーション動作確認・デバッグ実行
+- [x] デバッグ情報の半透明化・視認性最適化完了
+
+#### 📝 未完タスク / 次回予定：
+- [ ] 風（vx）演算の実装
+- [ ] 多段爆発・形状バリエーションの拡張
+- [ ] v1.9リリースコミット＆push
+
+---
+
+## v1.9 Debug Display Optimization リリース準備
+
+### 📋 v1.9の主な変更点：
+- デバッグ情報の半透明化（背景透明度50）
+- デバッグテキストを明るい緑色（100, 255, 100）に統一
+- 境界線の透明度調整（100）
+- 花火表示の視認性向上
+
+#### 🛠️ 技術的メモ：
+- Processing 3.3.7 core.jar: lib/processing-core.jar
+- コンパイル: `javac -cp "lib/processing-core.jar" -d target/classes src/main/java/fireworks/*.java`
+- 実行: `java -cp "lib/processing-core.jar:target/classes" fireworks.PMainFireworks`
+- 現在のバージョン: v1.9 Debug Display Optimization（デバッグ表示最適化完了）
+
+---
+
 ### 📅 日付：2025-06-24
 #### 🔨 作業内容：
 - v1.5物理モデル厳密化：クリック花火・自動花火ともに「目標高度（Y座標）」で爆発する物理ロジックに統一

@@ -26,6 +26,11 @@ public class PMainFireworks extends PApplet {
     private boolean starMinePending = false; // 闇待機中フラグ
     private int darkStartMillis = 0;
     private static final int DARK_DURATION_MS = 1000; // 1秒闇
+    // --- v1.9 Debug Display Optimization ---
+    private static final String VERSION = "v1.9 Debug Display Optimization";
+    private Firework.FireworkPattern currentPattern = Firework.FireworkPattern.RANDOM;
+    private boolean showDebugInfo = false;
+    private char lastPressedKey = ' '; // 最後に押されたキーを記録
 
     public void settings() {
         fullScreen();
@@ -61,7 +66,9 @@ public class PMainFireworks extends PApplet {
             }
             float maxFuseTime = calculateFuseTime(highestY);
             for (PVector click : pendingClicks) {
-                fireworks.add(new Firework(this, click.x, click.y, true, maxFuseTime));
+                Firework fw = new Firework(this, click.x, click.y, true, maxFuseTime);
+                fw.setPattern(currentPattern);
+                fireworks.add(fw);
             }
             pendingClicks.clear();
             starMinePending = false;
@@ -75,7 +82,9 @@ public class PMainFireworks extends PApplet {
         }
         // フォーカスモード中でもなく、ハイライト待機中でもない場合に自動打ち上げ
         if (pendingClicks.isEmpty() && !starMinePending && !inFocusMode && random(1) < FIREWORK_SPAWN_RATE) {
-            fireworks.add(new Firework(this, width));
+            Firework fw = new Firework(this, width);
+            fw.setPattern(currentPattern);
+            fireworks.add(fw);
         }
 
         // 全ての花火を更新・描画
@@ -86,6 +95,11 @@ public class PMainFireworks extends PApplet {
             if (f.isDone()) {
                 fireworks.remove(i);
             }
+        }
+
+        // デバッグ情報表示
+        if (showDebugInfo) {
+            displayDebugInfo();
         }
     }
 
@@ -99,17 +113,40 @@ public class PMainFireworks extends PApplet {
 
     @Override
     public void keyPressed() {
+        lastPressedKey = key; // キーを記録
+        
         if (key == 'r' || key == 'R') {
             fireworks.clear();
         } else if (key == ' ') {
             // 画面中央下部からランダムな花火を1発打ち上げ
             Firework fw = new Firework(this, width);
+            fw.setPattern(currentPattern);
             fw.pos = new processing.core.PVector(width / 2f, height);
             // 初速はランダムな上向きベクトル
             float angle = random(-PI / 4, -3 * PI / 4); // 上方向
             float speed = random(10, 14);
             fw.vel = new processing.core.PVector(cos(angle) * speed, sin(angle) * speed);
             fireworks.add(fw);
+        } else if (key >= '1' && key <= '4') {
+            // 数字キーでパターン切替
+            switch (key) {
+                case '1':
+                    currentPattern = Firework.FireworkPattern.RANDOM;
+                    break;
+                case '2':
+                    currentPattern = Firework.FireworkPattern.RING;
+                    break;
+                case '3':
+                    currentPattern = Firework.FireworkPattern.LINE;
+                    break;
+                case '4':
+                    currentPattern = Firework.FireworkPattern.STAR;
+                    break;
+            }
+            println("Pattern changed to: " + currentPattern);
+        } else if (key == 'd' || key == 'D') {
+            showDebugInfo = !showDebugInfo;
+            println("Debug info: " + (showDebugInfo ? "ON" : "OFF"));
         }
     }
 
@@ -122,7 +159,43 @@ public class PMainFireworks extends PApplet {
         return timeInFrames * (1000.0f / 60.0f);
     }
 
+    private void displayDebugInfo() {
+        // 非常に薄い半透明な背景（元の位置、上部）
+        fill(0, 0, 0, 50); // 非常に薄い透明度
+        rect(5, 5, width - 10, 300);
+        
+        // 境界線を追加（薄く）
+        stroke(255, 255, 0, 100); // 境界線も薄く
+        strokeWeight(1);
+        noFill();
+        rect(5, 5, width - 10, 300);
+        noStroke();
+
+        // デバッグテキスト（全て明るい緑色に統一）
+        fill(100, 255, 100); // 明るい緑色
+        textSize(24);
+        text("=== DEBUG INFO ===", 15, 35);
+        
+        // バージョン情報
+        textSize(20);
+        text("Version: " + VERSION, 15, 65);
+        
+        // 詳細情報
+        textSize(18);
+        text("Current Pattern: " + currentPattern, 15, 95);
+        text("Last Pressed Key: '" + lastPressedKey + "'", 15, 125);
+        text("Active Fireworks: " + fireworks.size(), 15, 155);
+        text("Star-Mine Pending: " + starMinePending, 15, 185);
+        text("Focus Mode: " + inFocusMode, 15, 215);
+        text("Pending Clicks: " + pendingClicks.size(), 15, 245);
+        
+        // パターン説明
+        textSize(16);
+        text("Controls: 1=RANDOM  2=RING  3=LINE  4=STAR", 15, 275);
+        text("D=Debug Toggle  R=Reset  Space=Launch", 15, 295);
+    }
+
     public static void main(String[] args) {
         PApplet.main(PMainFireworks.class);
     }
-} 
+}
